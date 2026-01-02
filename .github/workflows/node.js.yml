@@ -1,0 +1,37 @@
+name: Node.js CI (Server Only)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: 'npm'
+        # No path needed here since it's in the root
+
+    - name: Install dependencies
+      # npm ci is faster and safer for CI/CD than npm install
+      run: npm ci
+
+    - name: Security Audit
+      # Good DevOps practice: check for known vulnerabilities in your packages
+      run: npm audit --audit-level=high --if-present
+
+    - name: Run Build
+      run: npm run build --if-present
+
+    - name: Run Tests
+      env:
+        OPENROUTER_API_KEY: ${{ secrets.TEST_OPENROUTER_KEY || 'ci_test_key' }}
+      run: npm test --if-present
